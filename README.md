@@ -1,12 +1,14 @@
 # TRGN510_final-project-outline
 ## Title: Comparison of kidney cancer gene expression for white female patients age from 20-60 versus African American female patients age from 20-60
-## Author: Tingman Zhu (Eva) 
-## Contact: tingmanz@usc.edu
+## Author: 
+- Tingman Zhu (Eva) 
+## Contact: 
+- tingmanz@usc.edu
 ## Overview of project: 
 - RNA-Seq is a powerful tool for analyzing gene expression profiling. It can effectively detect the expressed genes between different conditions over the genome-wide level. For my project, I am interested in comparing differences in kidney cancer gene expression between white female patients age from 20-60 versus African American female patients age from 20-60. I would use the Bioconductor to analyze the RNA-seq in the HT-seq counts file. And this is the vignette I would use https://www.bioconductor.org/packages/devel/workflows/vignettes/RNAseq123/inst/doc/limmaWorkflow.html
 
 ## Data
-- White female patient(10 samples from TCGA database on the GDC data portal):
+- White female patient(10 samples from TCGA database on the [GDC Data Portal](https://portal.gdc.cancer.gov/):
   - f426d6b8-5010-471c-aa9c-253269f6bc03.htseq.counts.gz
   - 426b94fe-fcff-49f2-9d0b-c7cb49bb5559.htseq.counts.gz
   - a7d05ea6-aa28-457f-a20b-57e812b614e1.htseq.counts.gz
