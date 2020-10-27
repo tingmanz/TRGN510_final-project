@@ -20,7 +20,7 @@
   - fddf0083-59bd-4352-8e3d-7e5715f6d5b0.htseq.counts.gz
   - 7a790ece-2c1a-4895-a475-9fabbc0622a3.htseq.counts.gz
   
-- African American patient(10 samples from TCGA database on the GDC data porta): 
+- African American patient(10 samples from TCGA database on the [GDC Data Portal](https://portal.gdc.cancer.gov/):
   - 26dcc91b-b7d5-47c1-8135-e5ab4f4e4be5.htseq.counts.gz
   - a8ecb5d8-ece5-43cc-843c-da81dc031ced.htseq.counts.gz
   - e1c82878-ac01-45bd-83b0-4bc606039670.htseq.counts.gz
