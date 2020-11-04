@@ -46,9 +46,10 @@
 
 ## Milestone 1:
 - I would download the files from the National Cancer Institute GDC Data Portal website and load these data to R. Then I will set up limma, glimma and edgeR library in my RStudio. I would also check the format of my files and make sure the data can be transformed from raw data to usable data and can be processed by Bioconductor. Furthermore, I would calculate some values such as cpm, lcpm, mean and median. 
-
+   - **Updats status 11/3/2020**: This milestone target has been accomplished
 ## Milestone 2:
 - I would analyze the data effectively and understand more about RNA-seq. I would display or draw some plots such as heatmaps (show expression level), MDS plot (an informative representation of the similarities and dissimilarities in a sample) and some boxplots to better analyze my data. 
+   - **Updats status 11/3/2020**: This milestone is ongoing
 
 ## Deliverable：
 - R markdown
