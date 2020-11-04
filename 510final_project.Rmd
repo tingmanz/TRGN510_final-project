@@ -1,0 +1,112 @@
+---
+title: "final project"
+output: html_document
+---
+# Setting up:
+The libraries required for analysis are loaded in. The library of Limma and Glimma are used for analysis and computation differential expression. The edgeR is for organizing the data into a dataframe. Homo.sapiens is made by Bioconductor that enables comparing the GeneID and other methods of naming. 
+
+```{r}
+library(limma)
+library(Glimma)
+library(edgeR)
+library(Homo.sapiens)
+```
+#Loading the data
+The working directory is used to set the location where the files are stored. 
+The files are stored in a collective location. The first five rows are read as an example and printed as a result. The data has 2 columns which are ENSEMBL GENE ID in one column and the number of counts in another. THE ENSEMBL GENE ID is in the format: ENS(species)(object type)(identifier). (version)
+The files do not contain a header, so the column heads are denoted as V1 and V2
+
+
+#```{r}
+#setwd("~/Documents/TRGN510/final_project/")
+#```
+
+
+```{r setup}
+    knitr::opts_knit$set(root.dir="~/Documents/TRGN510/final_project/" ) 
+```
+
+```{r}
+files <- c("26dcc91b-b7d5-47c1-8135-e5ab4f4e4be5.htseq.counts", "a8ecb5d8-ece5-43cc-843c-da81dc031ced.htseq.counts", "20cdc1be-7412-4457-ab53-90dcfdf26f93.htseq.counts", "405e401d-d3fc-468c-8c63-c8dddf9b3ee3.htseq.counts", "e1c82878-ac01-45bd-83b0-4bc606039670.htseq.counts", "8d39e856-f93f-4eab-90ef-1e924b059fee.htseq.counts", "89528cea-b21b-4ea8-a271-3d3f3ff142c9.htseq.counts", "29e88863-d1b0-4da0-be95-d0a82eb1d08b.htseq.counts", "b2842754-010e-4f64-905d-89ef3eab3dc9.htseq.counts", "93e77514-c77b-4346-ae63-3e0d10512cff.htseq.counts", "ab461441-1f45-4ae5-b5da-ebb58817f75c.htseq.counts",  "84400ad5-cd37-4a94-a143-5c470599d1ce.htseq.counts",  "2147de22-3a52-490d-a4f6-32f6637ca24f.htseq.counts",  "a8d90f96-19e8-4b2c-a9c8-904a4063d235.htseq.counts", "f00b69a3-c3d2-4499-b337-abbce3e48f9b.htseq.counts", "1d443e1f-794b-45bb-ae6f-91f57d5fca33.htseq.counts", "3dce2e68-bcf1-42b6-9374-b2724a0f5242.htseq.counts", "5c9f1a05-1dc7-4e83-8dc2-3e5071796c07.htseq.counts", "7a790ece-2c1a-4895-a475-9fabbc0622a3.htseq.counts", "34e77fac-9e4b-481c-9a6c-a1b5f0916f06.htseq.counts", "426b94fe-fcff-49f2-9d0b-c7cb49bb5559.htseq.counts", "984ea13e-adc6-48f7-830d-66ce450a2ea0.htseq.counts", "2950c137-45e0-458f-987f-31de7f7befc4.htseq.counts",
+"60547e35-d42f-44bd-a9e8-21d57da93ee8.htseq.counts",
+"a7d05ea6-aa28-457f-a20b-57e812b614e1.htseq.counts",
+"bed7e30b-bf94-41d1-80f6-0595ff21bd3e.htseq.counts",
+"d7e7ad52-ecde-4744-b4e7-28dea4d186da.htseq.counts", 
+"df0b7118-2a68-420e-a1dd-236e05bc8fe8.htseq.counts",
+"f426d6b8-5010-471c-aa9c-253269f6bc03.htseq.counts",
+"f3876e31-2267-458d-826f-769bcfb34e56.htseq.counts")
+```
+
+```{r}
+read.delim(files[1], nrow=5, header=FALSE)
+getwd()
+```
+The content of each file is combined into one dataframe called 'x'. The data is sorted based on the parameter of white vs. African American. EdgeR provides a easy method to perform this with a single command. 
+
+
+```{r}
+x <- readDGE(files, columns=c(1,2))
+class(x)
+```
+The dimensions of the dataframe are them printed. Each file contains 60487 genes and have a sample size of 30 people.(15 white female and 15 African American female)
+```{r}
+dim(x)
+```
+```{r}
+samplenames<-colnames(x)
+sampleNames
+colnames(x) <- samplenames
+```
+Organizing the data: The samples are grouped based on their race. 
+```{r}
+group <- c(rep("African American",15), rep("white",15))
+x$samples$group <- group
+x$samples
+```
+Since the "homo.sapiens" package doesn't include the ENSEMBL Gene ID in the format provided by the loaded data, the data should convert using a substitution function. The digits following the decimal are replaced to look more similar to the key provided. 
+```{r}
+library(gsubfn)
+```
+
+```{r}
+geneid <- rownames(x)
+geneid <- gsub("\\.[0-9]*$", "", geneid)
+head(geneid)
+```
+The dataframe genes is used to store gene-level information related to rows of genes. The info we need for this data frame is retrieved from the 'Homo.sapiens'. The GeneIDs are related to the symbol and the chromosome number of each gene. 
+
+```{r}
+genes <- select(Homo.sapiens, keys=geneid, columns=c("SYMBOL", "TXCHROM"), 
+                keytype="ENSEMBL")
+heads(genes)
+
+```
+The duplicated genes would be removed from our dataset
+```{r}
+genes <- genes[!duplicated(genes$ENSEMBL),]
+x$genes <- genes
+x
+```
+# Data Pre-processing
+My data will be transformed from raw data to the useable form. And we would do the calculation of counts per million(cpm) and log of counts per million (lcpm)
+
+```{r}
+cpm <- cpm(x)
+lcpm <- cpm(x, log=TRUE)
+
+```
+L is the average library size in millions. M is the median of the library size in millions.
+
+```{r}
+L <- mean(x$samples$lib.size) * 1e-6
+M <- median(x$samples$lib.size) * 1e-6
+c(L, M)
+
+```
+```{r}
+summary(lcpm)
+
+```
+
+
+
