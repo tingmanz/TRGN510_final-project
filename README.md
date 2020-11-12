@@ -54,3 +54,6 @@
 
 ## Deliverable：
 - R markdown
+
+## Known Issue:
+- The columns of SYMBOL, TXCHROM, and ENSEMBL gene ID are mixed and couldn't separate in the three columns. But when I did the next step and removed the duplicated genes from our dataset, the SYMBOL, TXCHROM, and ENSEMBL can be separated and shown normally. And all the data and functions are presented and worked successfully in the following steps. 
