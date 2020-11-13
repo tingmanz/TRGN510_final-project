@@ -6,6 +6,12 @@
 - tingmanz@usc.edu
 ## Overview of project: 
 - RNA-Seq is a powerful tool for analyzing gene expression profiling. It can effectively detect the expressed genes between different conditions over the genome-wide level. For my project, I am interested in comparing differences in kidney cancer gene expression between white female patients age from 20-60 versus African American female patients age from 20-60. I would use the Bioconductor to analyze the RNA-seq in the HT-seq counts file. And this is the vignette I would use https://www.bioconductor.org/packages/devel/workflows/vignettes/RNAseq123/inst/doc/limmaWorkflow.html
+- Update: After talking with Professor Craig, one co-variate will be controlled for differential expression analyses. The tumor grade would be my control. Stage 1 and 2 would be define as "low grade", and stage 3 and 4 would be define as "high grade". 
+
+
+- RNA-Seq is a powerful tool for analyzing gene expression profiling. It can effectively detect the expressed genes between different conditions over the genome-wide level. For my project, I am interested in comparing differences in kidney cancer gene expression between white female patients age from 20-60 versus African American female patients age from 20-60. I would use the Bioconductor to analyze the RNA-seq in the HT-seq counts file. And this is the vignette I would use https://www.bioconductor.org/packages/devel/workflows/vignettes/RNAseq123/inst/doc/limmaWorkflow.html
+
+
 
 ## Data
 - White female patient(16 samples from TCGA database on the [GDC Data Portal](https://portal.gdc.cancer.gov/repository): 
@@ -50,8 +56,8 @@
    - **Updats status 11/3/2020**: This milestone target has been accomplished
 ## Milestone 2:
 - I would analyze the data effectively and understand more about RNA-seq. I would display or draw some plots such as heatmaps (show expression level), MDS plot (an informative representation of the similarities and dissimilarities in a sample) and some boxplots to better analyze my data. 
-   - **Updats status 11/3/2020**: This milestone target has been accomplished
-
+   - **Updats status 11/3/2020**: This milestone target has been accomplished. But some changes will be added to the markdown such as add the one covariate. And the "Gene set testing with camera" section will add to my final project. 
+- Note: the log-fold-change threshold was changed to 0.1 instead of 1 for detecting more significant up and down regulated genes. 
 ## Deliverable：
 - R markdown
 
