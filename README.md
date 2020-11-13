@@ -9,7 +9,6 @@
 - Update: After talking with Professor Craig, one co-variate will be controlled for differential expression analyses. The tumor grade would be my control. Stage 1 and 2 would be define as "low grade", and stage 3 and 4 would be define as "high grade". 
 
 
-- RNA-Seq is a powerful tool for analyzing gene expression profiling. It can effectively detect the expressed genes between different conditions over the genome-wide level. For my project, I am interested in comparing differences in kidney cancer gene expression between white female patients age from 20-60 versus African American female patients age from 20-60. I would use the Bioconductor to analyze the RNA-seq in the HT-seq counts file. And this is the vignette I would use https://www.bioconductor.org/packages/devel/workflows/vignettes/RNAseq123/inst/doc/limmaWorkflow.html
 
 
 
