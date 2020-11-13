@@ -10,6 +10,7 @@ library(limma)
 library(Glimma)
 library(edgeR)
 library(Homo.sapiens)
+library(biomaRt)
 ```
 #Loading the data
 The working directory is used to set the location where the files are stored. 
@@ -17,9 +18,9 @@ The files are stored in a collective location. The first five rows are read as a
 The files do not contain a header, so the column heads are denoted as V1 and V2
 
 
-#```{r}
-#setwd("~/Documents/TRGN510/final_project/")
-#```
+# ```{r}
+# setwd("~/Documents/TRGN510/final_project/")
+# ```
 
 
 ```{r setup}
@@ -41,14 +42,14 @@ files <- c("26dcc91b-b7d5-47c1-8135-e5ab4f4e4be5.htseq.counts", "a8ecb5d8-ece5-4
 read.delim(files[1], nrow=5, header=FALSE)
 getwd()
 ```
-The content of each file is combined into one dataframe called 'x'. The data is sorted based on the parameter of white vs. African American. EdgeR provides a easy method to perform this with a single command. 
+The content of each file is combined into one dataframe by using "readDGE" function, and the location of new combined data is called "x". The data is sorted based on the parameter of white vs. African American. EdgeR provides a easy method to perform this with a single command. 
 
 
 ```{r}
 x <- readDGE(files, columns=c(1,2))
 class(x)
 ```
-The dimensions of the dataframe are them printed. Each file contains 60487 genes and have a sample size of 30 people.(15 white female and 15 African American female)
+The dimensions of the dataframe are printed. Each file contains 60487 genes and have a sample size of 30 people.(15 white female and 15 African American female)
 ```{r}
 dim(x)
 ```
@@ -59,7 +60,7 @@ colnames(x) <- samplenames
 ```
 Organizing the data: The samples are grouped based on their race. 
 ```{r}
-group <- c(rep("African American",15), rep("white",15))
+group <- c(rep("AfricanAmerican",15), rep("White",15))
 x$samples$group <- group
 x$samples
 ```
@@ -67,6 +68,12 @@ Since the "homo.sapiens" package doesn't include the ENSEMBL Gene ID in the form
 ```{r}
 library(gsubfn)
 ```
+
+
+```{r}
+library(biomaRt)
+```
+
 
 ```{r}
 geneid <- rownames(x)
@@ -79,8 +86,9 @@ The dataframe genes is used to store gene-level information related to rows of g
 genes <- select(Homo.sapiens, keys=geneid, columns=c("SYMBOL", "TXCHROM"), 
                 keytype="ENSEMBL")
 heads(genes)
-
 ```
+
+
 The duplicated genes would be removed from our dataset
 ```{r}
 genes <- genes[!duplicated(genes$ENSEMBL),]
@@ -95,18 +103,189 @@ cpm <- cpm(x)
 lcpm <- cpm(x, log=TRUE)
 
 ```
-L is the average library size in millions. M is the median of the library size in millions.
+More calculation is shown below. L is the average library size in millions. M is the median of the library size in millions.
 
 ```{r}
 L <- mean(x$samples$lib.size) * 1e-6
 M <- median(x$samples$lib.size) * 1e-6
 c(L, M)
-
 ```
+The summary of the lcpm calculation is presented
 ```{r}
 summary(lcpm)
 
 ```
+The expressions of some genes are low and it's not helpful to do the statistical analysis in a meaningful way. And we found the low expression-genes are in both data groups. So to understand the ratio of these genes, we could run the following lines. 
+```{r}
+table(rowSums(x$counts==0)==9)
+```
+
+these low-expressed genes can be easily removed by using the method of EdgeR 
+```{r}
+keep.exprs <- filterByExpr(x, group=group)
+x <- x[keep.exprs,, keep.lib.sizes=FALSE]
+dim(x)
+```
+It showed the number of genes for interpretation reduced from 60487 to 20998. The raw data versus filtered data is shown in a graphical manner using the following lines of code. The library "RColorBrewer" contribute to creating visually appealing graphs. 
+
+```{r}
+lcpm.cutoff <- log2(10/M + 2/L)
+library(RColorBrewer)
+nsamples <- ncol(x)
+col <- brewer.pal(nsamples, "Paired")
+par(mfrow=c(1,2))
+plot(density(lcpm[,1]), col=col[1], lwd=2, ylim=c(0,0.26), las=2, main="", xlab="")
+title(main="A. Raw data", xlab="Log-cpm")
+abline(v=lcpm.cutoff, lty=3)
+for (i in 2:nsamples){
+den <- density(lcpm[,i])
+lines(den$x, den$y, col=col[i], lwd=2)
+}
+legend("topright", samplenames, text.col=col, bty="n")
+lcpm <- cpm(x, log=TRUE)
+plot(density(lcpm[,1]), col=col[1], lwd=2, ylim=c(0,0.26), las=2, main="", xlab="")
+title(main="B. Filtered data", xlab="Log-cpm")
+abline(v=lcpm.cutoff, lty=3)
+for (i in 2:nsamples){
+den <- density(lcpm[,i])
+lines(den$x, den$y, col=col[i], lwd=2)
+}
+legend("topright", samplenames, text.col=col, bty="n")
+```
+For normalization of the data, edgeR provides a great function to help us analyze the data. The resultant values are stored in a dataset called norm.factors. 
+
+```{r}
+x<- calcNormFactors(x, method = "TMM")
+x$samples$norm.factors
+```
+The counts of the first sample are reduced to 5% and the second is increased by 500%
+```{r}
+x2 <- x
+x2$samples$norm.factors <- 1
+x2$counts[,1] <- ceiling(x2$counts[,1]*0.05)
+x2$counts[,2] <- x2$counts[,2]*5
+
+```
+the graph below plots the data that is normalized versus unnormalized. 
+```{r}
+par(mfrow=c(1,2))
+lcpm <- cpm(x2, log=TRUE)
+boxplot(lcpm, las=2, col=col, main="")
+title(main="A. Example: Unnormalized data",ylab="Log-cpm")
+x2 <- calcNormFactors(x2)
+x2$samples$norm.factors
+```
+```{r}
+lcpm <- cpm(x2, log=TRUE)
+boxplot(lcpm, las=2, col=col, main="")
+title(main ="B. Example: Normalized data",ylab = "log-cpm")
+```
+The MDS plot is a method to visualize the level of similarity and the dissimilarities of individual cases of a dataset. The extent of the differences can give an idea of the expected consequence of the differential expression analysis. The plotMDS function of limma can help us to generate the plot. The distances on the plot would show the action of different categories on this data. 
+```{r}
+library(limma)
+library(Glimma)
+lcpm <- cpm(x, log=TRUE)
+par(mfrow=c(1,2))
+group
+levels(group) <- brewer.pal(nlevels(group), "Set1")
+col.group <- as.character(group)
+col.group <- c("purple","orange")[group]
+plotMDS(lcpm, labels=group, col=col.group)
+title(main="A. Sample groups")
+```
+The interactive version of this graph can be launched using glimma. 
+```{r}
+glMDSPlot(lcpm,groups = group)
+```
+
+#Differential Expression Analysis
+The first step of doing the differential expression analysis is to create a design matrix with groups of data. 
+```{r}
+design <- model.matrix(~0+group)
+colnames(design) <- gsub("group", "", colnames(design))
+design
+```
+
+Comparing the two groups are created and stored in a matrix
+```{r}
+contr.matrix <- makeContrasts(
+  AfricanAmericanVSWhite = AfricanAmerican-White,
+  levels = colnames(design))
+contr.matrix
+```
+
+Voom is a function within limma that would transfer the raw data into normalized data that can help us know the mean-variance relationship. 
+
+```{r}
+par(mfrow=c(1,2))
+v <- voom(x, design, plot = TRUE)
+v
+```
+In the following two plots, it showed the relationship between the mean and variances of the data. By using voom, we can see the first the relationship in first graph before the data is normalized. The effect of normalization can be visualized through the lines of the best fit. 
+To view the differential expression levels, we can generate the following table. (Up-up-regulated genes)
+```{r}
+vfit <- lmFit(v, design)
+vfit <- contrasts.fit(vfit,contrasts = contr.matrix)
+efit <- eBayes(vfit)
+plotSA(efit, main="Final model: Mean-variance trend")
+```
+T-statistics would show a more stringent definition of significance to be applied to the data
+```{r}
+summary(decideTests(efit))
+```
+
+```{r}
+tfit <- treat(vfit, lfc=0.1)
+dt <- decideTests(tfit)
+summary(dt)
+```
+```{r}
+de.common <- which(dt[,1]!=0)
+length(de.common)
+```
+```{r}
+head(tfit$genes$SYMBOL[de.common], n=30)
+```
+
+```{r}
+vennDiagram(dt[,1], circle.col = c("turquoise", "salmon"))
+```
+```{r}
+write.fit(tfit, dt, file="results.txt")
+```
+the genes are most differentially expressed are listed using a function called "toptreat".
+```{r}
+AfricanAmerican.vs.White <- topTreat(tfit, coef=1, n=Inf)
+head(AfricanAmerican.vs.White)
+```
+To summarise the genes, the log foldchange is plot against the log counts per million using the plotMD function. 
+```{r}
+plotMD(tfit, column=1, status=dt[,1], main=colnames(tfit)[1],
+       xlim=c(-8,13))
+```
+The following plot shows a small subset of up-regulated genes that could be found on the Y chromosome. This could be used as a test to to analyze the difference in regulations of the gene between races. 
+```{r}
+glMDPlot(tfit, coef=1, status=dt, main=colnames(tfit)[1],
+         side.main="ENSEMBL", counts = lcpm, groups=group, launch = TRUE)
+```
+We could generate a heatmap to see the highest expressed genes. Since my dataset is bigger than the normal dataset used in Vignette, so I chose to use heatmap.plus function. Heatmap.plus is a library can help us create the heatmap for larger datasets. 
+```{r}
+library(gplots)
+library(heatmap.plus)
+AfricanAmerican.vs.White.topgenes <- AfricanAmerican.vs.White$ENSEMBL[1:50]
+i <- which(v$genes$ENSEMBL %in% AfricanAmerican.vs.White.topgenes)
+mycol <- colorpanel(1000,"blue","white","red")
+par(cex.main=0.8,mar=c(1,1,1,1))
+heatmap.plus(lcpm[i,], scale="row", labRow=v$genes$SYMBOL[i], labCol=group, col=mycol, cexRow=1,cexCol=0.2, margins = c(8,6), main="HeatMap")
+```
+
+
+
+
+
+
+
+
 
 
 
