@@ -8,7 +8,8 @@
 - RNA-Seq is a powerful tool for analyzing gene expression profiling. It can effectively detect the expressed genes between different conditions over the genome-wide level. For my project, I am interested in comparing differences in kidney cancer gene expression between white female patients age from 20-60 versus African American female patients age from 20-60. I would use the Bioconductor to analyze the RNA-seq in the HT-seq counts file. And this is the vignette I would use https://www.bioconductor.org/packages/devel/workflows/vignettes/RNAseq123/inst/doc/limmaWorkflow.html
 
 ## Data
-- White female patient(16 samples from TCGA database on the [GDC Data Portal](https://portal.gdc.cancer.gov/):
+- White female patient(16 samples from TCGA database on the [GDC Data Portal](https://portal.gdc.cancer.gov/repository): 
+  `wget https://portal.gdc.cancer.gov/repository?facetTab=cases&filters=%7B%22op%22%3A%22and%22%2C%22content%22%3A%5B%7B%22op%22%3A%22in%22%2C%22content%22%3A%7B%22field%22%3A%22cases.demographic.gender%22%2C%22value%22%3A%5B%22female%22%5D%7D%7D%2C%7B%22op%22%3A%22in%22%2C%22content%22%3A%7B%22field%22%3A%22cases.demographic.race%22%2C%22value%22%3A%5B%22black%20or%20african%20american%22%2C%22white%22%5D%7D%7D%2C%7B%22content%22%3A%7B%22field%22%3A%22cases.diagnoses.age_at_diagnosis%22%2C%22value%22%3A%5B7305%5D%7D%2C%22op%22%3A%22%3E%3D%22%7D%2C%7B%22content%22%3A%7B%22field%22%3A%22cases.diagnoses.age_at_diagnosis%22%2C%22value%22%3A%5B22279%5D%7D%2C%22op%22%3A%22%3C%3D%22%7D%2C%7B%22op%22%3A%22in%22%2C%22content%22%3A%7B%22field%22%3A%22cases.primary_site%22%2C%22value%22%3A%5B%22kidney%22%5D%7D%7D%2C%7B%22op%22%3A%22in%22%2C%22content%22%3A%7B%22field%22%3A%22cases.project.program.name%22%2C%22value%22%3A%5B%22TCGA%22%5D%7D%7D%2C%7B%22op%22%3A%22in%22%2C%22content%22%3A%7B%22field%22%3A%22cases.project.project_id%22%2C%22value%22%3A%5B%22TCGA-KIRC%22%5D%7D%7D%2C%7B%22op%22%3A%22in%22%2C%22content%22%3A%7B%22field%22%3A%22files.analysis.workflow_type%22%2C%22value%22%3A%5B%22HTSeq%20-%20Counts%22%5D%7D%7D%2C%7B%22op%22%3A%22in%22%2C%22content%22%3A%7B%22field%22%3A%22files.experimental_strategy%22%2C%22value%22%3A%5B%22RNA-Seq%22%5D%7D%7D%5D%7D`
   - f426d6b8-5010-471c-aa9c-253269f6bc03.htseq.counts.gz
   - 426b94fe-fcff-49f2-9d0b-c7cb49bb5559.htseq.counts.gz
   - a7d05ea6-aa28-457f-a20b-57e812b614e1.htseq.counts.gz
@@ -46,9 +47,13 @@
 
 ## Milestone 1:
 - I would download the files from the National Cancer Institute GDC Data Portal website and load these data to R. Then I will set up limma, glimma and edgeR library in my RStudio. I would also check the format of my files and make sure the data can be transformed from raw data to usable data and can be processed by Bioconductor. Furthermore, I would calculate some values such as cpm, lcpm, mean and median. 
-
+   - **Updats status 11/3/2020**: This milestone target has been accomplished
 ## Milestone 2:
 - I would analyze the data effectively and understand more about RNA-seq. I would display or draw some plots such as heatmaps (show expression level), MDS plot (an informative representation of the similarities and dissimilarities in a sample) and some boxplots to better analyze my data. 
+   - **Updats status 11/3/2020**: This milestone is ongoing
 
 ## Deliverable：
 - R markdown
+
+## Known Issue:
+- The columns of SYMBOL, TXCHROM, and ENSEMBL gene ID are mixed and couldn't separate in the three columns. But when I did the next step and removed the duplicated genes from our dataset, the SYMBOL, TXCHROM, and ENSEMBL can be separated and shown normally. And all the data and functions are presented and worked successfully in the following steps. 
