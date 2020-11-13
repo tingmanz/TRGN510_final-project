@@ -50,7 +50,7 @@
    - **Updats status 11/3/2020**: This milestone target has been accomplished
 ## Milestone 2:
 - I would analyze the data effectively and understand more about RNA-seq. I would display or draw some plots such as heatmaps (show expression level), MDS plot (an informative representation of the similarities and dissimilarities in a sample) and some boxplots to better analyze my data. 
-   - **Updats status 11/3/2020**: This milestone is ongoing
+   - **Updats status 11/3/2020**: This milestone target has been accomplished
 
 ## Deliverable：
 - R markdown
