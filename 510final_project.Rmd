@@ -2,7 +2,10 @@
 title: "final project"
 output: html_document
 ---
-# Setting up:
+# Introduction 
+RNA-Seq is a powerful tool for analyzing gene expression profiling. It can effectively detect the expressed genes between different conditions over the genome-wide level. For my project, I am interested in comparing differences in kidney cancer gene expression between white female patients age from 20-60 versus African American female patients age from 20-60. I would use the Bioconductor to analyze the RNA-seq in the HT-seq counts file.
+# Setting up
+## Load in the required packages
 The libraries required for analysis are loaded in. The library of Limma and Glimma are used for analysis and computation differential expression. The edgeR is for organizing the data into a dataframe. Homo.sapiens is made by Bioconductor that enables comparing the GeneID and other methods of naming. 
 
 ```{r}
@@ -12,16 +15,8 @@ library(edgeR)
 library(Homo.sapiens)
 library(biomaRt)
 ```
-#Loading the data
-The working directory is used to set the location where the files are stored. 
-The files are stored in a collective location. The first five rows are read as an example and printed as a result. The data has 2 columns which are ENSEMBL GENE ID in one column and the number of counts in another. THE ENSEMBL GENE ID is in the format: ENS(species)(object type)(identifier). (version)
-The files do not contain a header, so the column heads are denoted as V1 and V2
-
-
-# ```{r}
-# setwd("~/Documents/TRGN510/final_project/")
-# ```
-
+# Loading the data
+To get started with this analysis, download the files from TCGA database on the GDC Data Portal https://portal.gdc.cancer.gov/repository. There will be 30 files loaded into R, and each file representing one patient. The working directory is used to set the location where the files are stored. 
 
 ```{r setup}
     knitr::opts_knit$set(root.dir="~/Documents/TRGN510/final_project/" ) 
@@ -38,33 +33,42 @@ files <- c("26dcc91b-b7d5-47c1-8135-e5ab4f4e4be5.htseq.counts", "a8ecb5d8-ece5-4
 "f3876e31-2267-458d-826f-769bcfb34e56.htseq.counts")
 ```
 
+The files are stored in a collective location. The first five rows are read as an example and printed as a result. The data has 2 columns, the column on the left side is ENSEMBL GENE ID and the column on the right is the number of counts . THE ENSEMBL GENE ID is in the format: ENS(species)(object type)(identifier). (version)
+The files do not contain a header, so the column heads are denoted as V1 and V2. 
+
 ```{r}
 read.delim(files[1], nrow=5, header=FALSE)
 getwd()
 ```
-The content of each file is combined into one dataframe by using "readDGE" function, and the location of new combined data is called "x". The data is sorted based on the parameter of white vs. African American. EdgeR provides a easy method to perform this with a single command. 
+
+## Group the data
+The content of each file is combined into one dataframe by using "readDGE" function, and the location of new combined data is called "x". The data is sorted based on the parameter of white vs. African American. EdgeR provides a easy method to perform this with a single command "readDGE".
 
 
 ```{r}
 x <- readDGE(files, columns=c(1,2))
 class(x)
 ```
-The dimensions of the dataframe are printed. Each file contains 60487 genes and have a sample size of 30 people.(15 white female and 15 African American female)
+The dimensions of the dataframe are printed. Each file contains 60487 genes (rows) and have a sample size of 30 people (15 white female and 15 African American female) or 30 columns.
 ```{r}
 dim(x)
 ```
+The code below could help to label all the columns in data frame "x" according to related files. 
 ```{r}
 samplenames<-colnames(x)
 sampleNames
 colnames(x) <- samplenames
 ```
-Organizing the data: The samples are grouped based on their race. 
+## Organizing the data
+The samples are grouped based on their race. And the information needs to be associated with the columns of the counts matrix. For the tumor grade, Stage 1 and 2 would be define as "low grade", and stage 3 and 4 would be define as "high grade".
 ```{r}
 group <- c(rep("AfricanAmerican",15), rep("White",15))
 x$samples$group <- group
+tumorgrade <-c("low", "low", "low", "low", "high", "low", "low", "low", "low", "low", "high", "low", "low", "low", "low", "low", "low", "high", "low", "low", "low", "high", "high", "low", "high", "high", "low", "high", "low", "low")
+x$samples$tumorgrade <- tumorgrade
 x$samples
 ```
-Since the "homo.sapiens" package doesn't include the ENSEMBL Gene ID in the format provided by the loaded data, the data should convert using a substitution function. The digits following the decimal are replaced to look more similar to the key provided. 
+Since the "homo.sapiens" package doesn't include the ENSEMBL Gene ID in the format provided by the loaded data, the data should convert using a substitution function. The digits following the decimal are replaced to match the key. 
 ```{r}
 library(gsubfn)
 ```
@@ -80,7 +84,9 @@ geneid <- rownames(x)
 geneid <- gsub("\\.[0-9]*$", "", geneid)
 head(geneid)
 ```
+
 The dataframe genes is used to store gene-level information related to rows of genes. The info we need for this data frame is retrieved from the 'Homo.sapiens'. The GeneIDs are related to the symbol and the chromosome number of each gene. 
+The columns of SYMBOL, TXCHROM, and ENSEMBL gene ID are mixed and couldn't separate in the three columns. But when I did the next step and removed the duplicated genes from our dataset, the SYMBOL, TXCHROM, and ENSEMBL can be separated and shown normally. And all the data and functions are presented and worked successfully in the following steps. I already note this in the Known Issue of README file. 
 
 ```{r}
 genes <- select(Homo.sapiens, keys=geneid, columns=c("SYMBOL", "TXCHROM"), 
@@ -96,6 +102,7 @@ x$genes <- genes
 x
 ```
 # Data Pre-processing
+## Transformation from the raw-scale
 My data will be transformed from raw data to the useable form. And we would do the calculation of counts per million(cpm) and log of counts per million (lcpm)
 
 ```{r}
@@ -115,18 +122,19 @@ The summary of the lcpm calculation is presented
 summary(lcpm)
 
 ```
+## Removing the genes that are lowly expressed
 The expressions of some genes are low and it's not helpful to do the statistical analysis in a meaningful way. And we found the low expression-genes are in both data groups. So to understand the ratio of these genes, we could run the following lines. 
 ```{r}
 table(rowSums(x$counts==0)==9)
 ```
 
-these low-expressed genes can be easily removed by using the method of EdgeR 
+EdgeR package gave an easy way to get rid of these lowly expressed genes. 
 ```{r}
 keep.exprs <- filterByExpr(x, group=group)
 x <- x[keep.exprs,, keep.lib.sizes=FALSE]
 dim(x)
 ```
-It showed the number of genes for interpretation reduced from 60487 to 20998. The raw data versus filtered data is shown in a graphical manner using the following lines of code. The library "RColorBrewer" contribute to creating visually appealing graphs. 
+It showed the number of genes for interpretation reduced from 60487 to 20998. The raw data versus filtered data is shown in a graphical manner using the following lines of code. The package "RColorBrewer" contribute to create visually appealing graphs. 
 
 ```{r}
 lcpm.cutoff <- log2(10/M + 2/L)
@@ -152,6 +160,9 @@ lines(den$x, den$y, col=col[i], lwd=2)
 }
 legend("topright", samplenames, text.col=col, bty="n")
 ```
+
+
+## Normalizing gene expression distribution
 For normalization of the data, edgeR provides a great function to help us analyze the data. The resultant values are stored in a dataset called norm.factors. 
 
 ```{r}
@@ -166,7 +177,7 @@ x2$counts[,1] <- ceiling(x2$counts[,1]*0.05)
 x2$counts[,2] <- x2$counts[,2]*5
 
 ```
-the graph below plots the data that is normalized versus unnormalized. 
+The graph below plots the data that is normalized versus non-normalized. 
 ```{r}
 par(mfrow=c(1,2))
 lcpm <- cpm(x2, log=TRUE)
@@ -180,28 +191,39 @@ lcpm <- cpm(x2, log=TRUE)
 boxplot(lcpm, las=2, col=col, main="")
 title(main ="B. Example: Normalized data",ylab = "log-cpm")
 ```
+
+## Unsupervised clustering of samples
 The MDS plot is a method to visualize the level of similarity and the dissimilarities of individual cases of a dataset. The extent of the differences can give an idea of the expected consequence of the differential expression analysis. The plotMDS function of limma can help us to generate the plot. The distances on the plot would show the action of different categories on this data. 
 ```{r}
 library(limma)
 library(Glimma)
 lcpm <- cpm(x, log=TRUE)
 par(mfrow=c(1,2))
-group
-levels(group) <- brewer.pal(nlevels(group), "Set1")
-col.group <- as.character(group)
+col.group <- group
+levels(col.group) <- brewer.pal(nlevels(col.group), "Set1")
+col.group <- as.character(col.group)
+col.tumorgrade <- tumorgrade
+levels(col.tumorgrade) <- brewer.pal(nlevels(col.tumorgrade), "Set2")
+col.tumorgrade <- as.character(col.tumorgrade)
 col.group <- c("purple","orange")[group]
+col.tumorgrade <- c("red","blue")[tumorgrade]
 plotMDS(lcpm, labels=group, col=col.group)
 title(main="A. Sample groups")
-```
-The interactive version of this graph can be launched using glimma. 
-```{r}
-glMDSPlot(lcpm,groups = group)
+plotMDS(lcpm, labels=tumorgrade, col=col.tumorgrade, dim=c(3,4))
+title(main="B. Tumor grade classifications")
 ```
 
-#Differential Expression Analysis
-The first step of doing the differential expression analysis is to create a design matrix with groups of data. 
+The interactive version of this graph can be launched using glimma. 
 ```{r}
-design <- model.matrix(~0+group)
+glMDSPlot(lcpm,labels=paste(group, tumorgrade, sep="_"),
+          groups=x$samples[,c(2,5)], launch=TRUE)
+```
+
+# Differential Expression Analysis
+## Creating a design matrix and contrasts
+The first step of doing the differential expression analysis is to create a design matrix with both the African American group of data and white group of data. Another column within the matrix, which the co-variate "tumor grade" will also be generated. 
+```{r}
+design <- model.matrix(~0+group+tumorgrade)
 colnames(design) <- gsub("group", "", colnames(design))
 design
 ```
@@ -213,7 +235,7 @@ contr.matrix <- makeContrasts(
   levels = colnames(design))
 contr.matrix
 ```
-
+## Removing heteroscedascity from count data
 Voom is a function within limma that would transfer the raw data into normalized data that can help us know the mean-variance relationship. 
 
 ```{r}
@@ -221,6 +243,7 @@ par(mfrow=c(1,2))
 v <- voom(x, design, plot = TRUE)
 v
 ```
+
 In the following two plots, it showed the relationship between the mean and variances of the data. By using voom, we can see the first the relationship in first graph before the data is normalized. The effect of normalization can be visualized through the lines of the best fit. 
 To view the differential expression levels, we can generate the following table. (Up-up-regulated genes)
 ```{r}
@@ -229,23 +252,28 @@ vfit <- contrasts.fit(vfit,contrasts = contr.matrix)
 efit <- eBayes(vfit)
 plotSA(efit, main="Final model: Mean-variance trend")
 ```
-T-statistics would show a more stringent definition of significance to be applied to the data
+
+## Examining the number of differentially expressed genes
+T-statistics would show a more stringent definition of significance to be applied to the data. In the table below, it showed there are 3 genes are down-regulated and 4 genes are up-regulated. 
 ```{r}
 summary(decideTests(efit))
 ```
-
+We could use the treat method to do the additional filtering of significant genes. The filter requires genes to have a log-fold change bigger than a predetermined value. In the beginning, I didn't see a lot of significant genes through the default cut-offs. In this situation, we could lower the thresholds to identify the most significant genes with the largest effect size. And I set the lfc to 0.1. Now, there are 4 genes significantly up-regulated and 2 genes significantly down-regulated. 
 ```{r}
 tfit <- treat(vfit, lfc=0.1)
 dt <- decideTests(tfit)
 summary(dt)
 ```
+After the changes of "lfc", I got 6 significant gene expression. 
 ```{r}
 de.common <- which(dt[,1]!=0)
 length(de.common)
 ```
+Now, we can see the names of the genes from the de.common list using the following code: 
 ```{r}
 head(tfit$genes$SYMBOL[de.common], n=30)
 ```
+The vennDiagram function can be used to visualize the DE genes that associated with two groups of patients. 
 
 ```{r}
 vennDiagram(dt[,1], circle.col = c("turquoise", "salmon"))
@@ -253,17 +281,24 @@ vennDiagram(dt[,1], circle.col = c("turquoise", "salmon"))
 ```{r}
 write.fit(tfit, dt, file="results.txt")
 ```
-the genes are most differentially expressed are listed using a function called "toptreat".
+## Examining individual DE genes from top to bottom
+Genes are most differentially expressed are listed using a function called "toptreat".
 ```{r}
 AfricanAmerican.vs.White <- topTreat(tfit, coef=1, n=Inf)
 head(AfricanAmerican.vs.White)
 ```
-To summarise the genes, the log foldchange is plot against the log counts per million using the plotMD function. 
+## Using graphical representations of differential expression results
+To summarize the genes, the log foldchange is plot against the log counts per million using the plotMD function. 
 ```{r}
 plotMD(tfit, column=1, status=dt[,1], main=colnames(tfit)[1],
        xlim=c(-8,13))
 ```
-The following plot shows a small subset of up-regulated genes that could be found on the Y chromosome. This could be used as a test to to analyze the difference in regulations of the gene between races. 
+
+
+This plot shows a small subset of up-regulated genes. This could be used as a test to to analyze the difference in regulations of the gene between races. 
+
+A more interactive version of this plot can be created using Glimma. 
+
 ```{r}
 glMDPlot(tfit, coef=1, status=dt, main=colnames(tfit)[1],
          side.main="ENSEMBL", counts = lcpm, groups=group, launch = TRUE)
@@ -280,9 +315,42 @@ heatmap.plus(lcpm[i,], scale="row", labRow=v$genes$SYMBOL[i], labCol=group, col=
 ```
 
 
+To explain the heatmap, the red area stand for up-regulated genes, the blue area stand for down-regulated genes, and the white area stand for no significant gene expression change. 
 
 
+# Gene set testing with camera
+## loading in the c2 curated gene set. 
+The c2 curated gene set can be used for analyzing human genes in R. The human_c2_v5p2.rdata file can be downloaded from the Broad Institute’s Molecular Signatures Database (MSigDB) collection. 
+```{r}
+load("human_c2_v5p2.rdata")
+```
+And then I checked the first several gene sets within the Homo sapiens c2 curated gene sets. And I got the total number of gene sets within Hs. c2
+```{r}
+names(Hs.c2)[1:5]
 
+length(Hs.c2)
+```
+Then I used the ids2indices function to map the gene IDs between the c2 gene sets and the v object. And I also create a contrast matrix that can compare the African American patients' data versus the White patients' data. 
+The camera function shows a competitive test to check whether the genes in a given set are highly ranked in terms of differential expression relative to genes that are not in the set. 
+```{r}
+idx <- ids2indices(Hs.c2, rownames(v$genes))
+```
+```{r}
+cam.AfricanAmericanVSWhite <- camera(v, idx,design,contrast = contr.matrix[,1])
+head(cam.AfricanAmericanVSWhite,5)
+```
+The barcode plot represents the relative enrichment of gene sets among the highly or lowly ranked genes between the African American v.s White female in kidney cancer cases. 
+
+```{r}
+barcodeplot(efit$t[,1], index=idx$LIM_MAMMARY_LUMINAL_MATURE_UP,
+          index2=idx$LIM_MAMMARY_LUMINAL_MATURE_DN, main="AfricanAmericanVSWhite")
+```
+
+
+## Software and code used
+```{r}
+sessionInfo()
+```
 
 
 
